@@ -7,6 +7,8 @@ from io import BytesIO
 # Pillow for Image processing.
 from PIL import Image, ImageDraw
 
+import math
+
 
 class Generator(object):
     """
@@ -64,7 +66,7 @@ class Generator(object):
 
         # Check if the digest produces sufficient entropy for identicon
         # generation.
-        entropy_provided = len(digest("test").hexdigest()) / 2 * 8
+        entropy_provided = len(digest("test".encode("utf-8")).hexdigest()) / 2 * 8
         entropy_required = (columns / 2 + columns % 2) * rows + 8
 
         if entropy_provided < entropy_required:
@@ -97,7 +99,7 @@ class Generator(object):
           True if the bit is 1. False if the bit is 0.
         """
 
-        if hash_bytes[n / 8] >> int(8 - ((n % 8) + 1)) & 1 == 1:
+        if hash_bytes[int(n / 8)] >> int(8 - ((n % 8) + 1)) & 1 == 1:
             return True
 
         return False
@@ -119,7 +121,7 @@ class Generator(object):
 
         # Since the identicon needs to be symmetric, we'll need to work on half
         # the columns (rounded-up), and reflect where necessary.
-        half_columns = self.columns / 2 + self.columns % 2
+        half_columns = int(math.ceil(self.columns / 2 + self.columns % 2))
         cells = self.rows * half_columns
 
         # Initialise the matrix (list of rows) that will be returned.
@@ -134,7 +136,7 @@ class Generator(object):
             if self._get_bit(cell, hash_bytes[1:]):
 
                 # Determine the cell coordinates in matrix.
-                column = cell / self.columns
+                column = int(cell / self.columns)
                 row = cell % self.rows
 
                 # Mark the cell and its reflection. Central column may get
@@ -171,9 +173,9 @@ class Generator(object):
                 data.decode("hex")
                 digest = data
             except TypeError:
-                digest = self.digest(data).hexdigest()
+                digest = self.digest(data.encode("utf-8")).hexdigest()
         else:
-            digest = self.digest(data).hexdigest()
+            digest = self.digest(data.encode("utf-8")).hexdigest()
 
         return [int(digest[i * 2:i * 2 + 2], 16) for i in range(16)]
 
